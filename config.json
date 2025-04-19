@@ -1,0 +1,10 @@
+{
+  "api_key": "YOUR_BINANCE_API_KEY",
+  "secret_key": "YOUR_BINANCE_SECRET_KEY",
+  "telegram_token": "YOUR_TELEGRAM_BOT_TOKEN",
+  "telegram_chat_id": "YOUR_CHAT_ID",
+  "mode": "test",
+  "symbol_long": "ETH/USDT",
+  "symbol_short": "BTC/USDT",
+  "risk_level": "low"
+}
