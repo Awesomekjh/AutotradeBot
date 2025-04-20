@@ -84,22 +84,62 @@ def main():
             # DCA adjustment
             position_size = dca_size(position_size, zscore)
 
-            # Execute trade based on z-score signal
-            if zscore_signal(zscore) == "LONG" and not position_open:
-                print("Long position triggered.")
-                # Execute long trade logic here
+            # 삼중 스크린 필터링 (삼중 스크린이 VALID일 경우에만 z-score 신호를 처리)
+            if triple_screen_signal(price_eth, price_btc) == "VALID":
+                # Execute trade based on z-score signal
+                if zscore_signal(zscore) == "LONG" and not position_open:
+                    print("Long position triggered.")
+                    position_open = True
+                    send_alert("Long position opened")
+                    # Place long order on exchange
+
+                elif zscore_signal(zscore) == "SHORT" and not position_open:
+                    print("Short position triggered.")
+                    position_open = True
+                    send_alert("Short position opened")
+                    # Place short order on exchange
+            else:
+                print("삼중 스크린 필터에 의해 진입 보류")
+
+            # 터틀 트레이딩 신호 처리
+            turtle_signal_result = turtle_signal(price_eth, price_btc)
+            if turtle_signal_result == "LONG" and not position_open:
+                print("Turtle long position triggered.")
                 position_open = True
+                send_alert("Turtle long position opened")
                 # Place long order on exchange
-                send_alert("Long position opened")
 
-            elif zscore_signal(zscore) == "SHORT" and not position_open:
-                print("Short position triggered.")
-                # Execute short trade logic here
+            elif turtle_signal_result == "SHORT" and not position_open:
+                print("Turtle short position triggered.")
                 position_open = True
+                send_alert("Turtle short position opened")
                 # Place short order on exchange
-                send_alert("Short position opened")
 
-            # Sleep before the next iteration (time delay between trading signals)
+            # DCA 및 터틀 진입 우선순위 처리
+            if zscore_signal(zscore) == "LONG" and dca_entry_condition_met():
+                if turtle_signal(price_eth, price_btc) == "LONG":
+                    print("터틀 트레이딩 신호 우선, DCA 진입 연기")
+                    enter_long_position()
+                else:
+                    enter_position()  # DCA 진입
+
+            # 익절 후 터틀 진입 제한
+            if position_profit > profit_threshold:
+                close_position()  # 포지션 종료 (익절)
+                if turtle_signal(price_eth, price_btc) == "LONG":
+                    print("익절 후 터틀 진입")
+                    enter_long_position()
+                else:
+                    print("익절 후 터틀 진입을 대기")
+
+            # 리스크 관리
+            if check_global_risk():
+                print("[RISK] Risk threshold exceeded. Stopping strategy.")
+                exit_all_positions()  # 모든 포지션 종료
+                send_alert("Risk limit exceeded, strategy halted.")
+                break  # 전략 종료
+
+            # Sleep before the next iteration
             time.sleep(60)  # adjust sleep time as needed
 
         except Exception as e:
