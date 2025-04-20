@@ -1,3 +1,5 @@
+from strategy_triplescreen import triple_screen_signal
+from strategy_turtle import turtle_signal
 import ccxt
 import time
 import json
